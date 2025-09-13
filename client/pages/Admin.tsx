@@ -415,7 +415,7 @@ export default function Admin() {
                                   <img
                                     src={editForm.photoUrl}
                                     alt="Preview"
-                                    className="h-12 w-12 rounded-md object-cover"
+                                    className="h-16 w-16 rounded-md object-cover"
                                   />
                                 )}
                               </div>
@@ -608,7 +608,7 @@ export default function Admin() {
                     <img
                       src={editForm.photoUrl}
                       alt="Preview"
-                      className="h-12 w-12 rounded-md object-cover"
+                      className="h-16 w-16 rounded-md object-cover"
                     />
                   )}
                 </div>
