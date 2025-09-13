@@ -14,12 +14,14 @@ export async function importLegacyJsonToNeonIfPresent(): Promise<{ imported: boo
   const pool = getPool();
   if (!pool) return { imported: false };
 
-  // Best-effort: read legacy JSON (encrypted). If files are missing, this will return empty defaults
+  // Only attempt import if legacy DB file exists to avoid creating it during dev
+  if (!existsSync("server/data/secure-db.json")) {
+    return { imported: false };
+  }
   let db: DBShape;
   try {
     db = readDB();
   } catch {
-    // If decryption fails or file missing, skip
     return { imported: false };
   }
   if (!hasLegacyData(db)) return { imported: false };
