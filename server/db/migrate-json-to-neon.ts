@@ -17,11 +17,21 @@ async function main() {
   for (const [tid, group] of Object.entries(db.students)) {
     for (const s of Object.values(group)) students.push(s);
   }
-  const attendance: { teacherId: string; dateKey: string; presentIds: string[]; savedAt?: string }[] = [];
+  const attendance: {
+    teacherId: string;
+    dateKey: string;
+    presentIds: string[];
+    savedAt?: string;
+  }[] = [];
   if (db.attendance) {
     for (const [tid, byDate] of Object.entries(db.attendance)) {
       for (const [dk, rec] of Object.entries(byDate)) {
-        attendance.push({ teacherId: tid, dateKey: dk, presentIds: (rec as any).presentIds ?? (rec as any).present ?? [], savedAt: (rec as any).savedAt });
+        attendance.push({
+          teacherId: tid,
+          dateKey: dk,
+          presentIds: (rec as any).presentIds ?? (rec as any).present ?? [],
+          savedAt: (rec as any).savedAt,
+        });
       }
     }
   }
@@ -99,7 +109,16 @@ async function main() {
     }
 
     await client.query("COMMIT");
-    console.log(JSON.stringify({ migrated: { admin: !!admin, teachers: teachers.length, students: students.length, attendance: attendance.length } }));
+    console.log(
+      JSON.stringify({
+        migrated: {
+          admin: !!admin,
+          teachers: teachers.length,
+          students: students.length,
+          attendance: attendance.length,
+        },
+      }),
+    );
   } catch (err) {
     await client.query("ROLLBACK");
     console.error(err);

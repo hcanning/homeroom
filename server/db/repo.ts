@@ -17,7 +17,9 @@ export function isNeon() {
 let __schemaEnsured = false;
 async function neonPool() {
   if (!__schemaEnsured && isNeon()) {
-    try { await ensureSchema(); } catch {}
+    try {
+      await ensureSchema();
+    } catch {}
     __schemaEnsured = true;
   }
   const pool = getPool();
