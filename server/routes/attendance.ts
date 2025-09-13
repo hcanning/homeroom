@@ -1,6 +1,10 @@
 import type { RequestHandler } from "express";
 import { getSession } from "../lib/session";
-import { getTodayAttendanceRec, listStudentsByTeacher, saveTodayAttendanceRec } from "../db/repo";
+import {
+  getTodayAttendanceRec,
+  listStudentsByTeacher,
+  saveTodayAttendanceRec,
+} from "../db/repo";
 
 function dateKey() {
   const d = new Date();

@@ -1,5 +1,9 @@
 import { getPool, ensureSchema } from "./neon";
-import { readDB as readJSON, persistDB as persistJSON, type DBShape } from "../lib/secure-store";
+import {
+  readDB as readJSON,
+  persistDB as persistJSON,
+  type DBShape,
+} from "../lib/secure-store";
 
 export const isNeon = !!getPool();
 
@@ -23,7 +27,9 @@ export async function getAdmin() {
     return db.admin;
   }
   const pool = getPool()!;
-  const r = await pool.query("SELECT email, password_hash AS \"passwordHash\", created_at AS \"createdAt\" FROM admins ORDER BY id ASC LIMIT 1");
+  const r = await pool.query(
+    'SELECT email, password_hash AS "passwordHash", created_at AS "createdAt" FROM admins ORDER BY id ASC LIMIT 1',
+  );
   return r.rows[0] ?? null;
 }
 
@@ -50,7 +56,7 @@ export async function getTeacherByEmail(email: string) {
   }
   const pool = getPool()!;
   const r = await pool.query(
-    "SELECT id, email, password_hash AS \"passwordHash\", name, pronouns, dept, photo_url AS \"photoUrl\", homeroom, created_at AS \"createdAt\" FROM teachers WHERE email = $1",
+    'SELECT id, email, password_hash AS "passwordHash", name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers WHERE email = $1',
     [email],
   );
   return r.rows[0] ?? null;
@@ -63,7 +69,7 @@ export async function getTeacherById(id: string) {
   }
   const pool = getPool()!;
   const r = await pool.query(
-    "SELECT id, email, password_hash AS \"passwordHash\", name, pronouns, dept, photo_url AS \"photoUrl\", homeroom, created_at AS \"createdAt\" FROM teachers WHERE id = $1",
+    'SELECT id, email, password_hash AS "passwordHash", name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers WHERE id = $1',
     [id],
   );
   return r.rows[0] ?? null;
@@ -76,12 +82,21 @@ export async function listAllTeachers() {
   }
   const pool = getPool()!;
   const r = await pool.query(
-    "SELECT id, email, name, pronouns, dept, photo_url AS \"photoUrl\", homeroom, created_at AS \"createdAt\" FROM teachers ORDER BY created_at DESC",
+    'SELECT id, email, name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers ORDER BY created_at DESC',
   );
   return r.rows;
 }
 
-export async function createTeacherRec(t: { id: string; email: string; passwordHash: string; name: string; pronouns?: string; dept?: string; photoUrl?: string; homeroom?: string; }) {
+export async function createTeacherRec(t: {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  pronouns?: string;
+  dept?: string;
+  photoUrl?: string;
+  homeroom?: string;
+}) {
   if (!isNeon) {
     const db = readJSON();
     db.teachers[t.id] = { ...t, createdAt: new Date().toISOString() } as any;
@@ -94,16 +109,36 @@ export async function createTeacherRec(t: { id: string; email: string; passwordH
   await pool.query(
     `INSERT INTO teachers (id, email, password_hash, name, pronouns, dept, photo_url, homeroom, created_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now())`,
-    [t.id, t.email, t.passwordHash, t.name, t.pronouns ?? null, t.dept ?? null, t.photoUrl ?? null, t.homeroom ?? null],
+    [
+      t.id,
+      t.email,
+      t.passwordHash,
+      t.name,
+      t.pronouns ?? null,
+      t.dept ?? null,
+      t.photoUrl ?? null,
+      t.homeroom ?? null,
+    ],
   );
   const r = await pool.query(
-    "SELECT id, email, name, pronouns, dept, photo_url AS \"photoUrl\", homeroom, created_at AS \"createdAt\" FROM teachers WHERE id = $1",
+    'SELECT id, email, name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers WHERE id = $1',
     [t.id],
   );
   return r.rows[0];
 }
 
-export async function updateTeacherRec(id: string, updates: { email?: string; passwordHash?: string; name?: string; pronouns?: string; dept?: string; photoUrl?: string; homeroom?: string; }) {
+export async function updateTeacherRec(
+  id: string,
+  updates: {
+    email?: string;
+    passwordHash?: string;
+    name?: string;
+    pronouns?: string;
+    dept?: string;
+    photoUrl?: string;
+    homeroom?: string;
+  },
+) {
   if (!isNeon) {
     const db = readJSON();
     const t = db.teachers[id];
@@ -114,7 +149,8 @@ export async function updateTeacherRec(id: string, updates: { email?: string; pa
     if (typeof updates.pronouns === "string") t.pronouns = updates.pronouns;
     if (typeof updates.dept === "string") t.dept = updates.dept;
     if (typeof updates.photoUrl === "string") t.photoUrl = updates.photoUrl;
-    if (typeof updates.homeroom === "string") (t as any).homeroom = updates.homeroom;
+    if (typeof updates.homeroom === "string")
+      (t as any).homeroom = updates.homeroom;
     persistJSON(db);
     const { passwordHash, ...safe } = t as any;
     return safe;
@@ -126,21 +162,29 @@ export async function updateTeacherRec(id: string, updates: { email?: string; pa
   let i = 1;
   for (const [k, v] of Object.entries(updates)) {
     if (v === undefined) continue;
-    const col = k === "photoUrl" ? "photo_url" : k === "passwordHash" ? "password_hash" : k;
+    const col =
+      k === "photoUrl"
+        ? "photo_url"
+        : k === "passwordHash"
+          ? "password_hash"
+          : k;
     fields.push(`${col} = $${i++}`);
     values.push(v);
   }
   if (!fields.length) {
     const r0 = await pool.query(
-      "SELECT id, email, name, pronouns, dept, photo_url AS \"photoUrl\", homeroom, created_at AS \"createdAt\" FROM teachers WHERE id = $1",
+      'SELECT id, email, name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers WHERE id = $1',
       [id],
     );
     return r0.rows[0] ?? null;
   }
   values.push(id);
-  await pool.query(`UPDATE teachers SET ${fields.join(", ")} WHERE id = $${i}`, values);
+  await pool.query(
+    `UPDATE teachers SET ${fields.join(", ")} WHERE id = $${i}`,
+    values,
+  );
   const r = await pool.query(
-    "SELECT id, email, name, pronouns, dept, photo_url AS \"photoUrl\", homeroom, created_at AS \"createdAt\" FROM teachers WHERE id = $1",
+    'SELECT id, email, name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers WHERE id = $1',
     [id],
   );
   return r.rows[0] ?? null;
@@ -167,17 +211,28 @@ export async function listStudentsByTeacher(teacherId: string) {
   }
   const pool = getPool()!;
   const r = await pool.query(
-    "SELECT id, teacher_id AS \"teacherId\", name, pronouns, dept, photo_url AS \"photoUrl\", created_at AS \"createdAt\" FROM students WHERE teacher_id = $1 ORDER BY created_at DESC",
+    'SELECT id, teacher_id AS "teacherId", name, pronouns, dept, photo_url AS "photoUrl", created_at AS "createdAt" FROM students WHERE teacher_id = $1 ORDER BY created_at DESC',
     [teacherId],
   );
   return r.rows;
 }
 
-export async function createStudentRec(student: { id: string; teacherId: string; name: string; pronouns?: string; dept?: string; photoUrl?: string; }) {
+export async function createStudentRec(student: {
+  id: string;
+  teacherId: string;
+  name: string;
+  pronouns?: string;
+  dept?: string;
+  photoUrl?: string;
+}) {
   if (!isNeon) {
     const db = readJSON();
-    if (!db.students[student.teacherId]) db.students[student.teacherId] = {} as any;
-    db.students[student.teacherId][student.id] = { ...student, createdAt: new Date().toISOString() } as any;
+    if (!db.students[student.teacherId])
+      db.students[student.teacherId] = {} as any;
+    db.students[student.teacherId][student.id] = {
+      ...student,
+      createdAt: new Date().toISOString(),
+    } as any;
     persistJSON(db);
     return db.students[student.teacherId][student.id];
   }
@@ -185,10 +240,17 @@ export async function createStudentRec(student: { id: string; teacherId: string;
   await pool.query(
     `INSERT INTO students (id, teacher_id, name, pronouns, dept, photo_url, created_at)
      VALUES ($1,$2,$3,$4,$5,$6, now())`,
-    [student.id, student.teacherId, student.name, student.pronouns ?? null, student.dept ?? null, student.photoUrl ?? null],
+    [
+      student.id,
+      student.teacherId,
+      student.name,
+      student.pronouns ?? null,
+      student.dept ?? null,
+      student.photoUrl ?? null,
+    ],
   );
   const r = await pool.query(
-    "SELECT id, teacher_id AS \"teacherId\", name, pronouns, dept, photo_url AS \"photoUrl\", created_at AS \"createdAt\" FROM students WHERE id = $1",
+    'SELECT id, teacher_id AS "teacherId", name, pronouns, dept, photo_url AS "photoUrl", created_at AS "createdAt" FROM students WHERE id = $1',
     [student.id],
   );
   return r.rows[0];
@@ -201,13 +263,22 @@ export async function getStudentById(teacherId: string, id: string) {
   }
   const pool = getPool()!;
   const r = await pool.query(
-    "SELECT id, teacher_id AS \"teacherId\", name, pronouns, dept, photo_url AS \"photoUrl\", created_at AS \"createdAt\" FROM students WHERE id = $1 AND teacher_id = $2",
+    'SELECT id, teacher_id AS "teacherId", name, pronouns, dept, photo_url AS "photoUrl", created_at AS "createdAt" FROM students WHERE id = $1 AND teacher_id = $2',
     [id, teacherId],
   );
   return r.rows[0] ?? null;
 }
 
-export async function updateStudentRec(teacherId: string, id: string, updates: { name?: string; pronouns?: string; dept?: string; photoUrl?: string; }) {
+export async function updateStudentRec(
+  teacherId: string,
+  id: string,
+  updates: {
+    name?: string;
+    pronouns?: string;
+    dept?: string;
+    photoUrl?: string;
+  },
+) {
   if (!isNeon) {
     const db = readJSON();
     const s = db.students[teacherId]?.[id];
@@ -231,10 +302,13 @@ export async function updateStudentRec(teacherId: string, id: string, updates: {
   }
   if (fields.length) {
     values.push(id, teacherId);
-    await pool.query(`UPDATE students SET ${fields.join(", ")} WHERE id = $${i++} AND teacher_id = $${i}` , values);
+    await pool.query(
+      `UPDATE students SET ${fields.join(", ")} WHERE id = $${i++} AND teacher_id = $${i}`,
+      values,
+    );
   }
   const r = await pool.query(
-    "SELECT id, teacher_id AS \"teacherId\", name, pronouns, dept, photo_url AS \"photoUrl\", created_at AS \"createdAt\" FROM students WHERE id = $1 AND teacher_id = $2",
+    'SELECT id, teacher_id AS "teacherId", name, pronouns, dept, photo_url AS "photoUrl", created_at AS "createdAt" FROM students WHERE id = $1 AND teacher_id = $2',
     [id, teacherId],
   );
   return r.rows[0] ?? null;
@@ -249,7 +323,10 @@ export async function deleteStudentRec(teacherId: string, id: string) {
     return true;
   }
   const pool = getPool()!;
-  await pool.query("DELETE FROM students WHERE id = $1 AND teacher_id = $2", [id, teacherId]);
+  await pool.query("DELETE FROM students WHERE id = $1 AND teacher_id = $2", [
+    id,
+    teacherId,
+  ]);
   return true;
 }
 
@@ -259,23 +336,35 @@ export async function getTodayAttendanceRec(teacherId: string) {
   if (!isNeon) {
     const db = readJSON() as DBShape & { attendance?: any };
     const rec = (db as any).attendance?.[teacherId]?.[dk] ?? null;
-    return rec ? { date: dk, presentIds: rec.presentIds ?? rec.present ?? [], savedAt: rec.savedAt } : null;
+    return rec
+      ? {
+          date: dk,
+          presentIds: rec.presentIds ?? rec.present ?? [],
+          savedAt: rec.savedAt,
+        }
+      : null;
   }
   const pool = getPool()!;
   const r = await pool.query(
-    "SELECT to_char(date_key,'YYYY-MM-DD') AS date, present_ids AS \"presentIds\", saved_at AS \"savedAt\" FROM attendance WHERE teacher_id = $1 AND date_key = $2::date",
+    'SELECT to_char(date_key,\'YYYY-MM-DD\') AS date, present_ids AS "presentIds", saved_at AS "savedAt" FROM attendance WHERE teacher_id = $1 AND date_key = $2::date',
     [teacherId, dk],
   );
   return r.rows[0] ?? null;
 }
 
-export async function saveTodayAttendanceRec(teacherId: string, presentIds: string[]) {
+export async function saveTodayAttendanceRec(
+  teacherId: string,
+  presentIds: string[],
+) {
   const dk = dateKey();
   if (!isNeon) {
     const db = readJSON() as DBShape & { attendance?: any };
     if (!db.attendance) (db as any).attendance = {} as any;
     if (!db.attendance[teacherId]) db.attendance[teacherId] = {} as any;
-    db.attendance[teacherId][dk] = { presentIds, savedAt: new Date().toISOString() } as any;
+    db.attendance[teacherId][dk] = {
+      presentIds,
+      savedAt: new Date().toISOString(),
+    } as any;
     persistJSON(db);
     return { date: dk, presentIds };
   }

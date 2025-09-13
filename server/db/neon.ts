@@ -6,7 +6,10 @@ export function getPool(): Pool | null {
   const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
   if (!url) return null;
   if (_pool) return _pool;
-  _pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  _pool = new Pool({
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+  });
   return _pool;
 }
 

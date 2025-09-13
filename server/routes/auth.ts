@@ -27,9 +27,11 @@ export const login: RequestHandler = async (req, res) => {
   const normEmail = email.trim().toLowerCase();
   if (role === "superadmin") {
     const admin = await getAdmin();
-    if (!admin)
-      return res.status(400).json({ error: "Admin not configured" });
-    if (admin.email !== normEmail || !verifyPassword(password, admin.passwordHash)) {
+    if (!admin) return res.status(400).json({ error: "Admin not configured" });
+    if (
+      admin.email !== normEmail ||
+      !verifyPassword(password, admin.passwordHash)
+    ) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
     setSession(res, { sub: "admin", role: "superadmin", iat: Date.now() });

@@ -76,7 +76,8 @@ export const updateTeacher: RequestHandler = async (req, res) => {
   }
   const updated = await updateTeacherRec(id, {
     email: email?.trim().toLowerCase(),
-    passwordHash: password && password.length > 0 ? hashPassword(password) : undefined,
+    passwordHash:
+      password && password.length > 0 ? hashPassword(password) : undefined,
     name,
     pronouns,
     dept,
@@ -107,7 +108,14 @@ export const createStudent: RequestHandler = async (req, res) => {
   };
   if (!name) return res.status(400).json({ error: "Missing required fields" });
   const id = nanoid();
-  const student = await createStudentRec({ id, teacherId, name, pronouns, dept, photoUrl });
+  const student = await createStudentRec({
+    id,
+    teacherId,
+    name,
+    pronouns,
+    dept,
+    photoUrl,
+  });
   res.json({ ok: true, student });
 };
 
@@ -140,7 +148,12 @@ export const updateStudent: RequestHandler = async (req, res) => {
     dept?: string;
     photoUrl?: string;
   };
-  const student = await updateStudentRec(sess.sub, id, { name, pronouns, dept, photoUrl });
+  const student = await updateStudentRec(sess.sub, id, {
+    name,
+    pronouns,
+    dept,
+    photoUrl,
+  });
   if (!student) return res.status(404).json({ error: "Not found" });
   res.json({ ok: true, student });
 };
@@ -180,7 +193,8 @@ export const updateTeacherMe: RequestHandler = async (req, res) => {
   }
   const updated = await updateTeacherRec(id, {
     email: email?.trim().toLowerCase(),
-    passwordHash: password && password.length > 0 ? hashPassword(password) : undefined,
+    passwordHash:
+      password && password.length > 0 ? hashPassword(password) : undefined,
     name,
     pronouns,
     dept,
