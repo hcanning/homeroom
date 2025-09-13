@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { verifyPassword, hashPassword } from "../lib/secure-store";
+import { verifyPassword, hashPassword } from "../lib/password";
 import { clearSession, setSession } from "../lib/session";
 import { getAdmin, setAdmin, getTeacherByEmail } from "../db/repo";
 

@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import { nanoid } from "../util/nanoid";
-import { hashPassword } from "../lib/secure-store";
+import { hashPassword } from "../lib/password";
 import { getSession, requireRole } from "../lib/session";
 import {
   createTeacherRec,
