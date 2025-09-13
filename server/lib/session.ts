@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { Request, Response, NextFunction } from "express";
-import { readDB } from "./secure-store";
 
 const COOKIE_NAME = "session";
 
