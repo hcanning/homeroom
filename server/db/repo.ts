@@ -1,9 +1,5 @@
 import { getPool, ensureSchema } from "./neon";
-import {
-  readDB as readJSON,
-  persistDB as persistJSON,
-  type DBShape,
-} from "../lib/secure-store";
+import type { DBShape } from "../lib/secure-store";
 
 export function isNeon() {
   return !!getPool();
@@ -27,6 +23,8 @@ async function neonPool() {
   return pool;
 }
 
+async function jsonStore() { return await import("../lib/secure-store"); }
+
 function dateKey(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -38,7 +36,8 @@ function dateKey(): string {
 // Admin
 export async function getAdmin() {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     return db.admin;
   }
   const pool = await neonPool();
@@ -50,9 +49,10 @@ export async function getAdmin() {
 
 export async function setAdmin(email: string, passwordHash: string) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     db.admin = { email, passwordHash, createdAt: new Date().toISOString() };
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     return;
   }
   const pool = await neonPool();
@@ -66,7 +66,8 @@ export async function setAdmin(email: string, passwordHash: string) {
 // Teachers
 export async function getTeacherByEmail(email: string) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     return Object.values(db.teachers).find((t) => t.email === email) ?? null;
   }
   const pool = await neonPool();
@@ -79,7 +80,8 @@ export async function getTeacherByEmail(email: string) {
 
 export async function getTeacherById(id: string) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     return db.teachers[id] ?? null;
   }
   const pool = await neonPool();
@@ -92,7 +94,8 @@ export async function getTeacherById(id: string) {
 
 export async function listAllTeachers() {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     return Object.values(db.teachers).map(({ passwordHash, ...rest }) => rest);
   }
   const pool = await neonPool();
@@ -113,10 +116,11 @@ export async function createTeacherRec(t: {
   homeroom?: string;
 }) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     db.teachers[t.id] = { ...t, createdAt: new Date().toISOString() } as any;
     if (!db.students[t.id]) db.students[t.id] = {};
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     const { passwordHash, ...safe } = db.teachers[t.id] as any;
     return safe;
   }
@@ -155,7 +159,8 @@ export async function updateTeacherRec(
   },
 ) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     const t = db.teachers[id];
     if (!t) return null;
     if (updates.email) t.email = updates.email;
@@ -166,7 +171,7 @@ export async function updateTeacherRec(
     if (typeof updates.photoUrl === "string") t.photoUrl = updates.photoUrl;
     if (typeof updates.homeroom === "string")
       (t as any).homeroom = updates.homeroom;
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     const { passwordHash, ...safe } = t as any;
     return safe;
   }
@@ -207,10 +212,11 @@ export async function updateTeacherRec(
 
 export async function deleteTeacherRec(id: string) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     delete db.teachers[id];
     delete db.students[id];
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     return true;
   }
   const pool = await neonPool();
@@ -221,7 +227,8 @@ export async function deleteTeacherRec(id: string) {
 // Students
 export async function listStudentsByTeacher(teacherId: string) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     return Object.values(db.students[teacherId] ?? {});
   }
   const pool = await neonPool();
@@ -241,14 +248,15 @@ export async function createStudentRec(student: {
   photoUrl?: string;
 }) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     if (!db.students[student.teacherId])
       db.students[student.teacherId] = {} as any;
     db.students[student.teacherId][student.id] = {
       ...student,
       createdAt: new Date().toISOString(),
     } as any;
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     return db.students[student.teacherId][student.id];
   }
   const pool = await neonPool();
@@ -273,7 +281,8 @@ export async function createStudentRec(student: {
 
 export async function getStudentById(teacherId: string, id: string) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     return db.students[teacherId]?.[id] ?? null;
   }
   const pool = await neonPool();
@@ -295,14 +304,15 @@ export async function updateStudentRec(
   },
 ) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     const s = db.students[teacherId]?.[id];
     if (!s) return null;
     if (typeof updates.name === "string") s.name = updates.name;
     if (typeof updates.pronouns === "string") s.pronouns = updates.pronouns;
     if (typeof updates.dept === "string") s.dept = updates.dept;
     if (typeof updates.photoUrl === "string") s.photoUrl = updates.photoUrl;
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     return s;
   }
   const pool = await neonPool();
@@ -331,10 +341,11 @@ export async function updateStudentRec(
 
 export async function deleteStudentRec(teacherId: string, id: string) {
   if (!isNeon()) {
-    const db = readJSON();
+    const { readDB } = await jsonStore();
+    const db = readDB();
     if (!db.students[teacherId]?.[id]) return false;
     delete db.students[teacherId][id];
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     return true;
   }
   const pool = await neonPool();
@@ -380,7 +391,7 @@ export async function saveTodayAttendanceRec(
       presentIds,
       savedAt: new Date().toISOString(),
     } as any;
-    persistJSON(db);
+    { const { persistDB } = await jsonStore(); persistDB(db as any); }
     return { date: dk, presentIds };
   }
   const pool = await neonPool();
