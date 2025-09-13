@@ -39,7 +39,7 @@ export async function getAdmin() {
     const db = readJSON();
     return db.admin;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const r = await pool.query(
     'SELECT email, password_hash AS "passwordHash", created_at AS "createdAt" FROM admins ORDER BY id ASC LIMIT 1',
   );
@@ -53,7 +53,7 @@ export async function setAdmin(email: string, passwordHash: string) {
     persistJSON(db);
     return;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   await pool.query("DELETE FROM admins");
   await pool.query(
     "INSERT INTO admins (email, password_hash, created_at) VALUES ($1, $2, now())",
@@ -67,7 +67,7 @@ export async function getTeacherByEmail(email: string) {
     const db = readJSON();
     return Object.values(db.teachers).find((t) => t.email === email) ?? null;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const r = await pool.query(
     'SELECT id, email, password_hash AS "passwordHash", name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers WHERE email = $1',
     [email],
@@ -80,7 +80,7 @@ export async function getTeacherById(id: string) {
     const db = readJSON();
     return db.teachers[id] ?? null;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const r = await pool.query(
     'SELECT id, email, password_hash AS "passwordHash", name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers WHERE id = $1',
     [id],
@@ -93,7 +93,7 @@ export async function listAllTeachers() {
     const db = readJSON();
     return Object.values(db.teachers).map(({ passwordHash, ...rest }) => rest);
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const r = await pool.query(
     'SELECT id, email, name, pronouns, dept, photo_url AS "photoUrl", homeroom, created_at AS "createdAt" FROM teachers ORDER BY created_at DESC',
   );
@@ -118,7 +118,7 @@ export async function createTeacherRec(t: {
     const { passwordHash, ...safe } = db.teachers[t.id] as any;
     return safe;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   await pool.query(
     `INSERT INTO teachers (id, email, password_hash, name, pronouns, dept, photo_url, homeroom, created_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now())`,
@@ -168,7 +168,7 @@ export async function updateTeacherRec(
     const { passwordHash, ...safe } = t as any;
     return safe;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   // Build dynamic update
   const fields: string[] = [];
   const values: any[] = [];
@@ -211,7 +211,7 @@ export async function deleteTeacherRec(id: string) {
     persistJSON(db);
     return true;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   await pool.query("DELETE FROM teachers WHERE id = $1", [id]);
   return true;
 }
@@ -222,7 +222,7 @@ export async function listStudentsByTeacher(teacherId: string) {
     const db = readJSON();
     return Object.values(db.students[teacherId] ?? {});
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const r = await pool.query(
     'SELECT id, teacher_id AS "teacherId", name, pronouns, dept, photo_url AS "photoUrl", created_at AS "createdAt" FROM students WHERE teacher_id = $1 ORDER BY created_at DESC',
     [teacherId],
@@ -249,7 +249,7 @@ export async function createStudentRec(student: {
     persistJSON(db);
     return db.students[student.teacherId][student.id];
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   await pool.query(
     `INSERT INTO students (id, teacher_id, name, pronouns, dept, photo_url, created_at)
      VALUES ($1,$2,$3,$4,$5,$6, now())`,
@@ -274,7 +274,7 @@ export async function getStudentById(teacherId: string, id: string) {
     const db = readJSON();
     return db.students[teacherId]?.[id] ?? null;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const r = await pool.query(
     'SELECT id, teacher_id AS "teacherId", name, pronouns, dept, photo_url AS "photoUrl", created_at AS "createdAt" FROM students WHERE id = $1 AND teacher_id = $2',
     [id, teacherId],
@@ -303,7 +303,7 @@ export async function updateStudentRec(
     persistJSON(db);
     return s;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const fields: string[] = [];
   const values: any[] = [];
   let i = 1;
@@ -335,7 +335,7 @@ export async function deleteStudentRec(teacherId: string, id: string) {
     persistJSON(db);
     return true;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   await pool.query("DELETE FROM students WHERE id = $1 AND teacher_id = $2", [
     id,
     teacherId,
@@ -357,7 +357,7 @@ export async function getTodayAttendanceRec(teacherId: string) {
         }
       : null;
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   const r = await pool.query(
     'SELECT to_char(date_key,\'YYYY-MM-DD\') AS date, present_ids AS "presentIds", saved_at AS "savedAt" FROM attendance WHERE teacher_id = $1 AND date_key = $2::date',
     [teacherId, dk],
@@ -381,7 +381,7 @@ export async function saveTodayAttendanceRec(
     persistJSON(db);
     return { date: dk, presentIds };
   }
-  const pool = getPool()!;
+  const pool = await neonPool();
   await pool.query(
     `INSERT INTO attendance (teacher_id, date_key, present_ids, saved_at)
      VALUES ($1, $2::date, $3, now())
