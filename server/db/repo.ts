@@ -5,7 +5,9 @@ import {
   type DBShape,
 } from "../lib/secure-store";
 
-export const isNeon = !!getPool();
+export function isNeon() {
+  return !!getPool();
+}
 
 // Initialize schema on module load (best-effort)
 (async () => {
