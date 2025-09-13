@@ -5,12 +5,25 @@ import { existsSync } from "fs";
 function hasLegacyData(db: DBShape): boolean {
   if (db.admin) return true;
   if (Object.keys(db.teachers).length) return true;
-  if (Object.keys(db.students).some((k) => Object.keys(db.students[k] ?? {}).length)) return true;
-  if (db.attendance && Object.keys(db.attendance).some((t) => Object.keys(db.attendance![t] ?? {}).length)) return true;
+  if (
+    Object.keys(db.students).some(
+      (k) => Object.keys(db.students[k] ?? {}).length,
+    )
+  )
+    return true;
+  if (
+    db.attendance &&
+    Object.keys(db.attendance).some(
+      (t) => Object.keys(db.attendance![t] ?? {}).length,
+    )
+  )
+    return true;
   return false;
 }
 
-export async function importLegacyJsonToNeonIfPresent(): Promise<{ imported: boolean }> {
+export async function importLegacyJsonToNeonIfPresent(): Promise<{
+  imported: boolean;
+}> {
   const pool = getPool();
   if (!pool) return { imported: false };
 
@@ -34,7 +47,9 @@ export async function importLegacyJsonToNeonIfPresent(): Promise<{ imported: boo
 
     // Admin (only insert if none exists)
     if (db.admin) {
-      const r = await client.query<{ count: string }>("SELECT COUNT(*)::text AS count FROM admins");
+      const r = await client.query<{ count: string }>(
+        "SELECT COUNT(*)::text AS count FROM admins",
+      );
       if (r.rows[0] && r.rows[0].count === "0") {
         await client.query(
           "INSERT INTO admins (email, password_hash, created_at) VALUES ($1, $2, COALESCE($3::timestamptz, now()))",
@@ -101,7 +116,9 @@ export async function importLegacyJsonToNeonIfPresent(): Promise<{ imported: boo
     // Attendance
     if (db.attendance) {
       for (const teacherId of Object.keys(db.attendance)) {
-        const byDate = db.attendance[teacherId] ?? {} as Record<string, { presentIds: string[]; savedAt: string }>;
+        const byDate =
+          db.attendance[teacherId] ??
+          ({} as Record<string, { presentIds: string[]; savedAt: string }>);
         for (const dateKey of Object.keys(byDate)) {
           const rec = byDate[dateKey];
           await client.query(
@@ -118,7 +135,9 @@ export async function importLegacyJsonToNeonIfPresent(): Promise<{ imported: boo
     await client.query("COMMIT");
     return { imported: true };
   } catch (e) {
-    try { await client.query("ROLLBACK"); } catch {}
+    try {
+      await client.query("ROLLBACK");
+    } catch {}
     return { imported: false };
   } finally {
     client.release();
