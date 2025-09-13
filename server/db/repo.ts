@@ -14,6 +14,17 @@ export function isNeon() {
   if (isNeon()) await ensureSchema().catch(() => {});
 })();
 
+let __schemaEnsured = false;
+async function neonPool() {
+  if (!__schemaEnsured && isNeon()) {
+    try { await ensureSchema(); } catch {}
+    __schemaEnsured = true;
+  }
+  const pool = getPool();
+  if (!pool) throw new Error("Neon pool unavailable");
+  return pool;
+}
+
 function dateKey(): string {
   const d = new Date();
   const y = d.getFullYear();
