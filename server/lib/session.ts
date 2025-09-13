@@ -4,11 +4,6 @@ import type { Request, Response, NextFunction } from "express";
 const COOKIE_NAME = "session";
 
 function getKey(): Buffer {
-  // Reuse the secure-store key by reading DB once to initialize key file
-  // Import side-effect ensures key file exists
-  readDB();
-  // Derive an HMAC key deterministically from the existing key path content for namespacing
-  // Simpler: use the same file contents but through readDB we ensured it's created
   const env = process.env.SESSION_SECRET;
   // Prefer external secret if provided
   return Buffer.from(env ?? "fallback-session-secret", "utf-8");
