@@ -11,7 +11,7 @@ export function isNeon() {
 
 // Initialize schema on module load (best-effort)
 (async () => {
-  if (isNeon) await ensureSchema().catch(() => {});
+  if (isNeon()) await ensureSchema().catch(() => {});
 })();
 
 function dateKey(): string {
