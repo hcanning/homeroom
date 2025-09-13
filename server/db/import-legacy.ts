@@ -1,5 +1,6 @@
 import { getPool, ensureSchema } from "./neon";
 import { readDB, type DBShape } from "../lib/secure-store";
+import { existsSync } from "fs";
 
 function hasLegacyData(db: DBShape): boolean {
   if (db.admin) return true;
