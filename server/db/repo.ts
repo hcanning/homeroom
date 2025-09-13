@@ -4,12 +4,16 @@ import {
   persistDB as persistJSON,
   type DBShape,
 } from "../lib/secure-store";
+import { importLegacyJsonToNeonIfPresent } from "./import-legacy";
 
 export const isNeon = !!getPool();
 
 // Initialize schema on module load (best-effort)
 (async () => {
-  if (isNeon) await ensureSchema().catch(() => {});
+  if (isNeon) {
+    await ensureSchema().catch(() => {});
+    await importLegacyJsonToNeonIfPresent().catch(() => {});
+  }
 })();
 
 function dateKey(): string {
