@@ -35,7 +35,7 @@ function dateKey(): string {
 
 // Admin
 export async function getAdmin() {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     return db.admin;
   }
@@ -47,7 +47,7 @@ export async function getAdmin() {
 }
 
 export async function setAdmin(email: string, passwordHash: string) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     db.admin = { email, passwordHash, createdAt: new Date().toISOString() };
     persistJSON(db);
@@ -63,7 +63,7 @@ export async function setAdmin(email: string, passwordHash: string) {
 
 // Teachers
 export async function getTeacherByEmail(email: string) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     return Object.values(db.teachers).find((t) => t.email === email) ?? null;
   }
@@ -76,7 +76,7 @@ export async function getTeacherByEmail(email: string) {
 }
 
 export async function getTeacherById(id: string) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     return db.teachers[id] ?? null;
   }
@@ -89,7 +89,7 @@ export async function getTeacherById(id: string) {
 }
 
 export async function listAllTeachers() {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     return Object.values(db.teachers).map(({ passwordHash, ...rest }) => rest);
   }
@@ -110,7 +110,7 @@ export async function createTeacherRec(t: {
   photoUrl?: string;
   homeroom?: string;
 }) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     db.teachers[t.id] = { ...t, createdAt: new Date().toISOString() } as any;
     if (!db.students[t.id]) db.students[t.id] = {};
@@ -152,7 +152,7 @@ export async function updateTeacherRec(
     homeroom?: string;
   },
 ) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     const t = db.teachers[id];
     if (!t) return null;
@@ -204,7 +204,7 @@ export async function updateTeacherRec(
 }
 
 export async function deleteTeacherRec(id: string) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     delete db.teachers[id];
     delete db.students[id];
@@ -218,7 +218,7 @@ export async function deleteTeacherRec(id: string) {
 
 // Students
 export async function listStudentsByTeacher(teacherId: string) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     return Object.values(db.students[teacherId] ?? {});
   }
@@ -238,7 +238,7 @@ export async function createStudentRec(student: {
   dept?: string;
   photoUrl?: string;
 }) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     if (!db.students[student.teacherId])
       db.students[student.teacherId] = {} as any;
@@ -270,7 +270,7 @@ export async function createStudentRec(student: {
 }
 
 export async function getStudentById(teacherId: string, id: string) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     return db.students[teacherId]?.[id] ?? null;
   }
@@ -292,7 +292,7 @@ export async function updateStudentRec(
     photoUrl?: string;
   },
 ) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     const s = db.students[teacherId]?.[id];
     if (!s) return null;
@@ -328,7 +328,7 @@ export async function updateStudentRec(
 }
 
 export async function deleteStudentRec(teacherId: string, id: string) {
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON();
     if (!db.students[teacherId]?.[id]) return false;
     delete db.students[teacherId][id];
@@ -346,7 +346,7 @@ export async function deleteStudentRec(teacherId: string, id: string) {
 // Attendance
 export async function getTodayAttendanceRec(teacherId: string) {
   const dk = dateKey();
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON() as DBShape & { attendance?: any };
     const rec = (db as any).attendance?.[teacherId]?.[dk] ?? null;
     return rec
@@ -370,7 +370,7 @@ export async function saveTodayAttendanceRec(
   presentIds: string[],
 ) {
   const dk = dateKey();
-  if (!isNeon) {
+  if (!isNeon()) {
     const db = readJSON() as DBShape & { attendance?: any };
     if (!db.attendance) (db as any).attendance = {} as any;
     if (!db.attendance[teacherId]) db.attendance[teacherId] = {} as any;
