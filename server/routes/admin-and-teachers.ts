@@ -1,12 +1,24 @@
 import type { RequestHandler } from "express";
 import { nanoid } from "../util/nanoid";
-import { persistDB, readDB, hashPassword } from "../lib/secure-store";
+import { hashPassword } from "../lib/secure-store";
 import { getSession, requireRole } from "../lib/session";
+import {
+  createTeacherRec,
+  deleteStudentRec,
+  deleteTeacherRec,
+  getStudentById,
+  getTeacherByEmail,
+  getTeacherById,
+  listAllTeachers,
+  listStudentsByTeacher,
+  updateStudentRec,
+  updateTeacherRec,
+} from "../db/repo";
 
 export const requireSuperadmin = requireRole("superadmin");
 export const requireTeacher = requireRole("teacher");
 
-export const createTeacher: RequestHandler = (req, res) => {
+export const createTeacher: RequestHandler = async (req, res) => {
   const { email, password, name, pronouns, dept, photoUrl, homeroom } =
     req.body as {
       email?: string;
@@ -19,15 +31,14 @@ export const createTeacher: RequestHandler = (req, res) => {
     };
   if (!email || !password || !name)
     return res.status(400).json({ error: "Missing required fields" });
-  const db = readDB();
   const normEmail = email.trim().toLowerCase();
-  const exists = Object.values(db.teachers).some((t) => t.email === normEmail);
+  const exists = await getTeacherByEmail(normEmail);
   if (exists)
     return res
       .status(400)
       .json({ error: "Teacher with this email already exists" });
   const id = nanoid();
-  db.teachers[id] = {
+  const teacher = await createTeacherRec({
     id,
     email: normEmail,
     passwordHash: hashPassword(password),
@@ -36,25 +47,16 @@ export const createTeacher: RequestHandler = (req, res) => {
     dept,
     photoUrl,
     homeroom,
-    createdAt: new Date().toISOString(),
-  };
-  if (!db.students[id]) db.students[id] = {};
-  persistDB(db);
-  res.json({
-    ok: true,
-    teacher: { ...db.teachers[id], passwordHash: undefined },
   });
+  res.json({ ok: true, teacher });
 };
 
-export const listTeachers: RequestHandler = (_req, res) => {
-  const db = readDB();
-  const list = Object.values(db.teachers).map(
-    ({ passwordHash, ...rest }) => rest,
-  );
+export const listTeachers: RequestHandler = async (_req, res) => {
+  const list = await listAllTeachers();
   res.json({ teachers: list });
 };
 
-export const updateTeacher: RequestHandler = (req, res) => {
+export const updateTeacher: RequestHandler = async (req, res) => {
   const id = req.params.id;
   const { email, password, name, pronouns, dept, photoUrl, homeroom } =
     req.body as {
@@ -66,39 +68,34 @@ export const updateTeacher: RequestHandler = (req, res) => {
       photoUrl?: string;
       homeroom?: string;
     };
-  const db = readDB();
-  const t = db.teachers[id];
-  if (!t) return res.status(404).json({ error: "Not found" });
   if (email) {
     const normEmail = email.trim().toLowerCase();
-    const exists = Object.values(db.teachers).some(
-      (x) => x.email === normEmail && x.id !== id,
-    );
-    if (exists) return res.status(400).json({ error: "Email already in use" });
-    t.email = normEmail;
+    const exists = await getTeacherByEmail(normEmail);
+    if (exists && exists.id !== id)
+      return res.status(400).json({ error: "Email already in use" });
   }
-  if (typeof name === "string") t.name = name;
-  if (typeof pronouns === "string") t.pronouns = pronouns;
-  if (typeof dept === "string") t.dept = dept;
-  if (typeof photoUrl === "string") t.photoUrl = photoUrl;
-  if (typeof homeroom === "string") t.homeroom = homeroom;
-  if (password && password.length > 0) t.passwordHash = hashPassword(password);
-  persistDB(db);
-  const { passwordHash, ...safe } = t;
-  res.json({ ok: true, teacher: safe });
+  const updated = await updateTeacherRec(id, {
+    email: email?.trim().toLowerCase(),
+    passwordHash:
+      password && password.length > 0 ? hashPassword(password) : undefined,
+    name,
+    pronouns,
+    dept,
+    photoUrl,
+    homeroom,
+  });
+  if (!updated) return res.status(404).json({ error: "Not found" });
+  res.json({ ok: true, teacher: updated });
 };
 
-export const deleteTeacher: RequestHandler = (req, res) => {
+export const deleteTeacher: RequestHandler = async (req, res) => {
   const id = req.params.id;
-  const db = readDB();
-  if (!db.teachers[id]) return res.status(404).json({ error: "Not found" });
-  delete db.teachers[id];
-  delete db.students[id];
-  persistDB(db);
+  const ok = await deleteTeacherRec(id);
+  if (!ok) return res.status(404).json({ error: "Not found" });
   res.json({ ok: true });
 };
 
-export const createStudent: RequestHandler = (req, res) => {
+export const createStudent: RequestHandler = async (req, res) => {
   const sess = getSession(req);
   if (!sess || sess.role !== "teacher")
     return res.status(401).json({ error: "Unauthorized" });
@@ -110,86 +107,74 @@ export const createStudent: RequestHandler = (req, res) => {
     photoUrl?: string;
   };
   if (!name) return res.status(400).json({ error: "Missing required fields" });
-  const db = readDB();
   const id = nanoid();
-  const student = {
+  const student = await createStudentRec({
     id,
     teacherId,
     name,
     pronouns,
     dept,
     photoUrl,
-    createdAt: new Date().toISOString(),
-  };
-  if (!db.students[teacherId]) db.students[teacherId] = {};
-  db.students[teacherId][id] = student;
-  persistDB(db);
+  });
   res.json({ ok: true, student });
 };
 
-export const listStudents: RequestHandler = (req, res) => {
+export const listStudents: RequestHandler = async (req, res) => {
   const sess = getSession(req);
   if (!sess || sess.role !== "teacher")
     return res.status(401).json({ error: "Unauthorized" });
-  const db = readDB();
-  const students = Object.values(db.students[sess.sub] ?? {});
+  const students = await listStudentsByTeacher(sess.sub);
   res.json({ students });
 };
 
-export const getTeacherMe: RequestHandler = (req, res) => {
+export const getTeacherMe: RequestHandler = async (req, res) => {
   const sess = getSession(req);
   if (!sess || sess.role !== "teacher")
     return res.status(401).json({ error: "Unauthorized" });
-  const db = readDB();
-  const t = db.teachers[sess.sub];
+  const t = await getTeacherById(sess.sub);
   if (!t) return res.status(404).json({ error: "Not found" });
   const { passwordHash, ...safe } = t as any;
   res.json({ teacher: safe });
 };
 
-export const updateStudent: RequestHandler = (req, res) => {
+export const updateStudent: RequestHandler = async (req, res) => {
   const sess = getSession(req);
   if (!sess || sess.role !== "teacher")
     return res.status(401).json({ error: "Unauthorized" });
-  const db = readDB();
   const id = req.params.id;
-  const student = db.students[sess.sub]?.[id];
-  if (!student) return res.status(404).json({ error: "Not found" });
   const { name, pronouns, dept, photoUrl } = req.body as {
     name?: string;
     pronouns?: string;
     dept?: string;
     photoUrl?: string;
   };
-  if (typeof name === "string") student.name = name;
-  if (typeof pronouns === "string") student.pronouns = pronouns;
-  if (typeof dept === "string") student.dept = dept;
-  if (typeof photoUrl === "string") student.photoUrl = photoUrl;
-  persistDB(db);
+  const student = await updateStudentRec(sess.sub, id, {
+    name,
+    pronouns,
+    dept,
+    photoUrl,
+  });
+  if (!student) return res.status(404).json({ error: "Not found" });
   res.json({ ok: true, student });
 };
 
-export const deleteStudent: RequestHandler = (req, res) => {
+export const deleteStudent: RequestHandler = async (req, res) => {
   const sess = getSession(req);
   if (!sess || sess.role !== "teacher")
     return res.status(401).json({ error: "Unauthorized" });
-  const db = readDB();
   const id = req.params.id;
-  if (!db.students[sess.sub]?.[id])
-    return res.status(404).json({ error: "Not found" });
-  delete db.students[sess.sub][id];
-  persistDB(db);
+  const ok = await deleteStudentRec(sess.sub, id);
+  if (!ok) return res.status(404).json({ error: "Not found" });
   res.json({ ok: true });
 };
 
-export const updateTeacherMe: RequestHandler = (req, res) => {
+export const updateTeacherMe: RequestHandler = async (req, res) => {
   const sess = getSession(req);
   if (!sess || sess.role !== "teacher")
     return res.status(401).json({ error: "Unauthorized" });
-  const db = readDB();
   const id = sess.sub;
-  const t = db.teachers[id];
-  if (!t) return res.status(404).json({ error: "Not found" });
+  const t0 = await getTeacherById(id);
+  if (!t0) return res.status(404).json({ error: "Not found" });
   const { email, password, name, pronouns, dept, photoUrl, homeroom } =
     req.body as {
       email?: string;
@@ -202,19 +187,20 @@ export const updateTeacherMe: RequestHandler = (req, res) => {
     };
   if (email) {
     const normEmail = email.trim().toLowerCase();
-    const exists = Object.values(db.teachers).some(
-      (x) => x.email === normEmail && x.id !== id,
-    );
-    if (exists) return res.status(400).json({ error: "Email already in use" });
-    t.email = normEmail;
+    const exists = await getTeacherByEmail(normEmail);
+    if (exists && exists.id !== id)
+      return res.status(400).json({ error: "Email already in use" });
   }
-  if (typeof name === "string") t.name = name;
-  if (typeof pronouns === "string") t.pronouns = pronouns;
-  if (typeof dept === "string") t.dept = dept;
-  if (typeof photoUrl === "string") t.photoUrl = photoUrl;
-  if (typeof homeroom === "string") (t as any).homeroom = homeroom;
-  if (password && password.length > 0) t.passwordHash = hashPassword(password);
-  persistDB(db);
-  const { passwordHash, ...safe } = t as any;
-  res.json({ ok: true, teacher: safe });
+  const updated = await updateTeacherRec(id, {
+    email: email?.trim().toLowerCase(),
+    passwordHash:
+      password && password.length > 0 ? hashPassword(password) : undefined,
+    name,
+    pronouns,
+    dept,
+    photoUrl,
+    homeroom,
+  });
+  if (!updated) return res.status(404).json({ error: "Not found" });
+  res.json({ ok: true, teacher: updated });
 };
