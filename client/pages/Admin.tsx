@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,149 +117,158 @@ export default function Admin() {
             <CardTitle>
               <div className="flex items-center justify-between">
                 <span>Create Teacher</span>
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen((v) => !v)} aria-expanded={isCreateOpen}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCreateOpen((v) => !v)}
+                  aria-expanded={isCreateOpen}
+                >
                   {isCreateOpen ? "Hide" : "Show"}
                 </Button>
               </div>
             </CardTitle>
           </CardHeader>
           {isCreateOpen && (
-          <CardContent>
-            <form onSubmit={createTeacher} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="t-photo">Photo</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="t-photo"
-                      className="sr-only"
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0];
-                        if (!f) return;
-                        const data = await readFileAsDataURL(f);
-                        setTeacherForm({ ...teacherForm, photoUrl: data });
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      aria-label="Upload photo"
-                      onClick={() =>
-                        document.getElementById("t-photo")?.click()
-                      }
-                    >
-                      <span>Upload Photo</span>
-                      <Upload className="w-4 h-4" />
-                    </Button>
-                    {teacherForm.photoUrl && (
-                      <img
-                        src={teacherForm.photoUrl}
-                        alt="Preview"
-                        className="h-16 w-16 rounded-md object-cover"
+            <CardContent>
+              <form onSubmit={createTeacher} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="t-photo">Photo</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="t-photo"
+                        className="sr-only"
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          const data = await readFileAsDataURL(f);
+                          setTeacherForm({ ...teacherForm, photoUrl: data });
+                        }}
                       />
-                    )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        aria-label="Upload photo"
+                        onClick={() =>
+                          document.getElementById("t-photo")?.click()
+                        }
+                      >
+                        <span>Upload Photo</span>
+                        <Upload className="w-4 h-4" />
+                      </Button>
+                      {teacherForm.photoUrl && (
+                        <img
+                          src={teacherForm.photoUrl}
+                          alt="Preview"
+                          className="h-16 w-16 rounded-md object-cover"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="t-name">Name</Label>
-                  <Input
-                    id="t-name"
-                    value={teacherForm.name}
-                    onChange={(e) =>
-                      setTeacherForm({ ...teacherForm, name: e.target.value })
-                    }
-                    required
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="t-name">Name</Label>
+                    <Input
+                      id="t-name"
+                      value={teacherForm.name}
+                      onChange={(e) =>
+                        setTeacherForm({ ...teacherForm, name: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="t-pronouns">Pronouns</Label>
+                    <Select
+                      value={teacherForm.pronouns}
+                      onValueChange={(v) =>
+                        setTeacherForm({ ...teacherForm, pronouns: v })
+                      }
+                    >
+                      <SelectTrigger id="t-pronouns">
+                        <SelectValue placeholder="Select pronouns" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="she/her">she/her</SelectItem>
+                        <SelectItem value="he/him">he/him</SelectItem>
+                        <SelectItem value="they/them">they/them</SelectItem>
+                        <SelectItem value="she/they">she/they</SelectItem>
+                        <SelectItem value="he/they">he/they</SelectItem>
+                        <SelectItem value="prefer not to say">
+                          prefer not to say
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="t-pronouns">Pronouns</Label>
-                  <Select
-                    value={teacherForm.pronouns}
-                    onValueChange={(v) =>
-                      setTeacherForm({ ...teacherForm, pronouns: v })
-                    }
-                  >
-                    <SelectTrigger id="t-pronouns">
-                      <SelectValue placeholder="Select pronouns" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="she/her">she/her</SelectItem>
-                      <SelectItem value="he/him">he/him</SelectItem>
-                      <SelectItem value="they/them">they/them</SelectItem>
-                      <SelectItem value="she/they">she/they</SelectItem>
-                      <SelectItem value="he/they">he/they</SelectItem>
-                      <SelectItem value="prefer not to say">
-                        prefer not to say
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="t-email">Email</Label>
+                    <Input
+                      id="t-email"
+                      type="email"
+                      value={teacherForm.email}
+                      onChange={(e) =>
+                        setTeacherForm({
+                          ...teacherForm,
+                          email: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="t-password">Password</Label>
+                    <Input
+                      id="t-password"
+                      type="password"
+                      value={teacherForm.password}
+                      onChange={(e) =>
+                        setTeacherForm({
+                          ...teacherForm,
+                          password: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="t-email">Email</Label>
-                  <Input
-                    id="t-email"
-                    type="email"
-                    value={teacherForm.email}
-                    onChange={(e) =>
-                      setTeacherForm({ ...teacherForm, email: e.target.value })
-                    }
-                    required
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="t-dept">Department</Label>
+                    <Input
+                      id="t-dept"
+                      value={teacherForm.dept}
+                      onChange={(e) =>
+                        setTeacherForm({ ...teacherForm, dept: e.target.value })
+                      }
+                      placeholder="Science"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="t-homeroom">Homeroom Identifier</Label>
+                    <Input
+                      id="t-homeroom"
+                      value={teacherForm.homeroom}
+                      onChange={(e) =>
+                        setTeacherForm({
+                          ...teacherForm,
+                          homeroom: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. Room 101 or Auto Repair"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="t-password">Password</Label>
-                  <Input
-                    id="t-password"
-                    type="password"
-                    value={teacherForm.password}
-                    onChange={(e) =>
-                      setTeacherForm({
-                        ...teacherForm,
-                        password: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="t-dept">Department</Label>
-                  <Input
-                    id="t-dept"
-                    value={teacherForm.dept}
-                    onChange={(e) =>
-                      setTeacherForm({ ...teacherForm, dept: e.target.value })
-                    }
-                    placeholder="Science"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="t-homeroom">Homeroom Identifier</Label>
-                  <Input
-                    id="t-homeroom"
-                    value={teacherForm.homeroom}
-                    onChange={(e) =>
-                      setTeacherForm({
-                        ...teacherForm,
-                        homeroom: e.target.value,
-                      })
-                    }
-                    placeholder="e.g. Room 101 or Auto Repair"
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full">
-                Create Teacher
-              </Button>
-            </form>
-          </CardContent>
+                <Button type="submit" className="w-full">
+                  Create Teacher
+                </Button>
+              </form>
+            </CardContent>
           )}
         </Card>
         <div>

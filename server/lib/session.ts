@@ -1,18 +1,11 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { Request, Response, NextFunction } from "express";
-import { readDB } from "./secure-store";
 
 const COOKIE_NAME = "session";
 
 function getKey(): Buffer {
-  // Reuse the secure-store key by reading DB once to initialize key file
-  // Import side-effect ensures key file exists
-  readDB();
-  // Derive an HMAC key deterministically from the existing key path content for namespacing
-  // Simpler: use the same file contents but through readDB we ensured it's created
   const env = process.env.SESSION_SECRET;
-  // Prefer external secret if provided
-  return Buffer.from(env ?? "fallback-session-secret", "utf-8");
+  return Buffer.from(env ?? "dev-session-secret", "utf-8");
 }
 
 export type SessionPayload = {
@@ -48,8 +41,8 @@ export function setSession(res: Response, payload: SessionPayload) {
   const token = sign(payload);
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "none",
-    secure: true,
+    sameSite: "lax",
+    secure: false,
     path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
